@@ -24,6 +24,7 @@
         // Test if console is working
         console.log("Script loaded at", new Date().toLocaleString());
 
+        // Update this to match your exact Vercel deployment URL
         const BACKEND_URL = "https://transcript-backend-7v3wdj1vk-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
@@ -60,14 +61,14 @@
                     return;
                 }
                 setIsLoading(true);
-                console.log("Starting OTP request for orgId=", orgId, "empId=", empId);
+                console.log("Starting OTP request for orgId=", orgId, "empId=", empId, "URL:", `${BACKEND_URL}/api/request-otp`);
                 try {
                     const response = await fetch(`${BACKEND_URL}/api/request-otp`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId) })
                     });
-                    console.log("Received response with status:", response.status, "headers:", response.headers);
+                    console.log("Received response with status:", response.status, "headers:", Object.fromEntries(response.headers));
                     const data = await response.json();
                     console.log("Response data:", data);
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -550,7 +551,6 @@
             );
         }
 
-        // Use createRoot instead of render
         const root = ReactDOM.createRoot(document.getElementById("root"));
         root.render(<App />);
     </script>
