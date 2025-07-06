@@ -21,10 +21,9 @@
 <body class="bg-gray-100 font-sans">
     <div id="root" class="container mx-auto p-4 max-w-2xl"></div>
     <script type="text/babel">
-        // Test if console is working
         console.log("Script loaded at", new Date().toLocaleString());
 
-        // Update this to match your exact Vercel deployment URL
+        // Use the same Vercel domain for both frontend and backend
         const BACKEND_URL = "https://transcript-backend-7v3wdj1vk-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
@@ -61,14 +60,15 @@
                     return;
                 }
                 setIsLoading(true);
-                console.log("Starting OTP request for orgId=", orgId, "empId=", empId, "URL:", `${BACKEND_URL}/api/request-otp`);
+                const requestUrl = `${BACKEND_URL}api/request-otp`;
+                console.log("Attempting OTP request with URL:", requestUrl, "Method: POST", "Data:", { orgId: parseInt(orgId), empId: parseInt(empId) });
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/request-otp`, {
+                    const response = await fetch(requestUrl, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId) })
                     });
-                    console.log("Received response with status:", response.status, "headers:", Object.fromEntries(response.headers));
+                    console.log("Response status:", response.status, "Headers:", Object.fromEntries(response.headers));
                     const data = await response.json();
                     console.log("Response data:", data);
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -91,7 +91,7 @@
                     return;
                 }
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/validate-otp`, {
+                    const response = await fetch(`${BACKEND_URL}api/validate-otp`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId), otp })
@@ -111,7 +111,7 @@
 
             const fetchClients = async () => {
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/fetch-clients`, {
+                    const response = await fetch(`${BACKEND_URL}api/fetch-clients`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ orgId: parseInt(orgId) })
@@ -210,7 +210,7 @@
                 }
                 const transcriptionText = transcription.map(t => `Speaker ${t.speaker}: ${t.text}`).join("\n");
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/save-transcription`, {
+                    const response = await fetch(`${BACKEND_URL}api/save-transcription`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -238,7 +238,7 @@
                     return;
                 }
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/fetch-notes`, {
+                    const response = await fetch(`${BACKEND_URL}api/fetch-notes`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -260,7 +260,7 @@
 
             const updateNote = async (dateTime, newText) => {
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/update-note`, {
+                    const response = await fetch(`${BACKEND_URL}api/update-note`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -309,7 +309,7 @@
                     return;
                 }
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/register`, {
+                    const response = await fetch(`${BACKEND_URL}api/register`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(data)
@@ -346,7 +346,7 @@
                     return;
                 }
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/register-client`, {
+                    const response = await fetch(`${BACKEND_URL}api/register-client`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(data)
