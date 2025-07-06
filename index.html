@@ -21,7 +21,10 @@
 <body class="bg-gray-100 font-sans">
     <div id="root" class="container mx-auto p-4 max-w-2xl"></div>
     <script type="text/babel">
-        const BACKEND_URL = "https://transcript-backend-git-main-megamind1212s-projects.vercel.app/"; // Verified correct URL
+        // Test if console is working
+        console.log("Script loaded at", new Date().toLocaleString());
+
+        const BACKEND_URL = "https://transcript-backend-git-main-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
@@ -57,25 +60,24 @@
                     return;
                 }
                 setIsLoading(true);
-                console.log(`Requesting OTP for orgId=${orgId}, empId=${empId}`);
+                console.log("Starting OTP request for orgId=", orgId, "empId=", empId);
                 try {
                     const response = await fetch(`${BACKEND_URL}/api/request-otp`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId) }),
-                        credentials: "omit"
+                        body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId) })
                     });
-                    console.log("Response status:", response.status);
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    console.log("Received response with status:", response.status);
                     const data = await response.json();
                     console.log("Response data:", data);
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     if (data.error) setError(data.error);
                     else {
                         setMessage(data.message);
                         showSection("otp");
                     }
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error requesting OTP: ${err.message}`);
                 } finally {
                     setIsLoading(false);
@@ -91,8 +93,7 @@
                     const response = await fetch(`${BACKEND_URL}/api/validate-otp`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId), otp }),
-                        credentials: "omit"
+                        body: JSON.stringify({ orgId: parseInt(orgId), empId: parseInt(empId), otp })
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
@@ -102,7 +103,7 @@
                         showSection("transcription");
                     }
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error validating OTP: ${err.message}`);
                 }
             };
@@ -112,15 +113,14 @@
                     const response = await fetch(`${BACKEND_URL}/api/fetch-clients`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ orgId: parseInt(orgId) }),
-                        credentials: "omit"
+                        body: JSON.stringify({ orgId: parseInt(orgId) })
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
                     if (data.error) setError(data.error);
                     else setClients(data.clients);
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error fetching clients: ${err.message}`);
                 }
             };
@@ -218,15 +218,14 @@
                             clientId: parseInt(clientId),
                             transcriptionText,
                             audioData
-                        }),
-                        credentials: "omit"
+                        })
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
                     if (data.error) setError(data.error);
                     else setMessage("Transcription saved successfully for client!");
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error saving transcription: ${err.message}`);
                 }
             };
@@ -246,15 +245,14 @@
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
                             selectedDate: selectedDate || null
-                        }),
-                        credentials: "omit"
+                        })
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
                     if (data.error) setError(data.error);
                     else setNotes(data.notes);
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error fetching notes: ${err.message}`);
                 }
             };
@@ -270,8 +268,7 @@
                             clientId: parseInt(clientId),
                             dateTime,
                             newText
-                        }),
-                        credentials: "omit"
+                        })
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
@@ -281,7 +278,7 @@
                         fetchNotes();
                     }
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error updating note: ${err.message}`);
                 }
             };
@@ -314,8 +311,7 @@
                     const response = await fetch(`${BACKEND_URL}/api/register`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(data),
-                        credentials: "omit"
+                        body: JSON.stringify(data)
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const result = await response.json();
@@ -325,7 +321,7 @@
                         showSection("welcome");
                     }
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error during registration: ${err.message}`);
                 }
             };
@@ -352,8 +348,7 @@
                     const response = await fetch(`${BACKEND_URL}/api/register-client`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(data),
-                        credentials: "omit"
+                        body: JSON.stringify(data)
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const result = await response.json();
@@ -365,7 +360,7 @@
                         showSection("client-selection");
                     }
                 } catch (err) {
-                    console.error("Fetch error:", err.message, err);
+                    console.error("Fetch error:", err.message, err.stack);
                     setError(`Error registering client: ${err.message}`);
                 }
             };
