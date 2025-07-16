@@ -12,8 +12,6 @@
         .section { display: none; }
         .section.active { display: block; }
         .recording { background-color: #ef4444; color: white; }
-        .speaker-0 { font-weight: bold; color: #1e40af; }
-        .speaker-1 { font-weight: bold; color: #15803d; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -23,7 +21,6 @@
     <script type="text/babel">
         console.log("Script loaded at", new Date().toLocaleString());
 
-        // Use the same Vercel domain for both frontend and backend
         const BACKEND_URL = "https://transcript-backend-j7foumlsx-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
@@ -34,7 +31,7 @@
             const [empId, setEmpId] = React.useState("");
             const [clientId, setClientId] = React.useState("");
             const [isRecording, setIsRecording] = React.useState(false);
-            const [transcription, setTranscription] = React.useState([]);
+            const [transcription, setTranscription] = React.useState("");
             const [audioData, setAudioData] = React.useState(null);
             const [clients, setClients] = React.useState([]);
             const [notes, setNotes] = React.useState([]);
@@ -128,7 +125,7 @@
 
             const startRecording = async () => {
                 audioChunks.current = [];
-                setTranscription([]);
+                setTranscription("");
                 try {
                     stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder.current = new MediaRecorder(stream.current, { mimeType: "audio/webm" });
@@ -144,24 +141,12 @@
                         const transcript = data.channel?.alternatives?.[0]?.transcript;
                         const words = data.channel?.alternatives?.[0]?.words || [];
                         if (transcript && words.length > 0) {
-                            let currentSpeaker = null;
-                            let currentText = "";
+                            let newText = "";
                             words.forEach(wordInfo => {
-                                const speaker = wordInfo.speaker || 0;
                                 const word = wordInfo.punctuated_word || wordInfo.word;
-                                if (currentSpeaker === null || currentSpeaker !== speaker) {
-                                    if (currentText) {
-                                        setTranscription(prev => [...prev, { speaker: currentSpeaker, text: currentText.trim() }]);
-                                    }
-                                    currentSpeaker = speaker;
-                                    currentText = word;
-                                } else {
-                                    currentText += " " + word;
-                                }
+                                newText += (newText ? " " : "") + word;
                             });
-                            if (currentText) {
-                                setTranscription(prev => [...prev, { speaker: currentSpeaker, text: currentText.trim() }]);
-                            }
+                            setTranscription(prev => prev + (prev ? " " : "") + newText.trim());
                         }
                     };
 
@@ -204,11 +189,10 @@
                     setError("Please login and select a client.");
                     return;
                 }
-                if (!transcription.length) {
+                if (!transcription) {
                     setError("No transcription data to save.");
                     return;
                 }
-                const transcriptionText = transcription.map(t => `Speaker ${t.speaker}: ${t.text}`).join("\n");
                 try {
                     const response = await fetch(`${BACKEND_URL}api/save-transcription`, {
                         method: "POST",
@@ -217,7 +201,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            transcriptionText,
+                            transcriptionText: transcription,
                             audioData
                         })
                     });
@@ -337,12 +321,12 @@
                     clientPhone: formData.get("clientPhone"),
                     clientEmail: formData.get("clientEmail")
                 };
-                if (!data.clientName || !data.clientShortname || !data.clientPhone || !data.clientEmail) {
-                    setError("Please fill in all fields.");
+                if (!data.clientName || !data.clientShortname || !data.clientEmail) {
+                    setError("Please fill in required fields: client name, shortname, and email.");
                     return;
                 }
-                if (!data.clientPhone.match(/\+91[0-9]{10}/)) {
-                    setError("Client phone must be in the format +91 followed by 10 digits.");
+                if (data.clientPhone && !data.clientPhone.match(/\+91[0-9]{10}/)) {
+                    setError("If provided, client phone must be in the format +91 followed by 10 digits.");
                     return;
                 }
                 try {
@@ -447,10 +431,10 @@
                     <div id="client-register" className={`section ${currentSection === "client-register" ? "active" : ""}`}>
                         <h2 className="text-xl font-bold mb-4">Register Client</h2>
                         <form onSubmit={registerClient}>
-                            <input name="clientName" type="text" placeholder="Client Name" className="border p-2 mb-2 w-full rounded" />
-                            <input name="clientShortname" type="text" placeholder="Client Shortname" className="border p-2 mb-2 w-full rounded" />
-                            <input name="clientPhone" type="text" placeholder="Client Phone (+91...)" className="border p-2 mb-2 w-full rounded" />
-                            <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" />
+                            <input name="clientName" type="text" placeholder="Client Name" className="border p-2 mb-2 w-full rounded" required />
+                            <input name="clientShortname" type="text" placeholder="Client Shortname" className="border p-2 mb-2 w-full rounded" required />
+                            <input name="clientPhone" type="text" placeholder="Client Phone (+91...) (optional)" className="border p-2 mb-2 w-full rounded" />
+                            <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" required />
                             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Register Client</button>
                             <button type="button" onClick={() => showSection("client-selection")} className="bg-gray-500 text-white px-4 py-2 rounded ml-2">Back</button>
                         </form>
@@ -467,8 +451,8 @@
                         </button>
                         <button
                             onClick={saveTranscription}
-                            disabled={!transcription.length || isRecording}
-                            className={`px-4 py-2 rounded ml-2 ${!transcription.length || isRecording ? "bg-gray-400 text-white cursor-not-allowed" : "bg-green-500 text-white"}`}
+                            disabled={!transcription || isRecording}
+                            className={`px-4 py-2 rounded ml-2 ${!transcription || isRecording ? "bg-gray-400 text-white cursor-not-allowed" : "bg-green-500 text-white"}`}
                         >
                             Save Transcription 💾
                         </button>
@@ -476,18 +460,14 @@
                             {transcription.length === 0 ? (
                                 <p>{isRecording ? "Recording… Speak clearly." : "No transcription yet."}</p>
                             ) : (
-                                transcription.map((t, index) => (
-                                    <div key={index} className={`speaker-${t.speaker}`}>
-                                        <strong>Speaker {t.speaker}:</strong> {t.text}
-                                    </div>
-                                ))
+                                <p>{transcription}</p>
                             )}
                         </div>
                         <button onClick={() => {
                             setOrgId("");
                             setEmpId("");
                             setClientId("");
-                            setTranscription([]);
+                            setTranscription("");
                             setAudioData(null);
                             showSection("welcome");
                         }} className="bg-red-500 text-white px-4 py-2 rounded mt-2">Logout</button>
@@ -544,7 +524,7 @@
                                         </button>
                                     </div>
                                 ))
-                            )} fvccndbxg    
+                            )} 
                         </div>
                     </div>
                 </div>
