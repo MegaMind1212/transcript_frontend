@@ -245,19 +245,7 @@
                     const data = await response.json();
                     if (data.error) setError(data.error);
                     else {
-                        const formattedNotes = data.notes.map(note => ({
-                            ...note,
-                            DateTime: new Date(note.DateTime).toLocaleString('en-GB', {
-                                timeZone: 'Asia/Kolkata',
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                            }).replace(/,/g, '').replace(/ /g, '-')
-                        }));
-                        setNotes(formattedNotes);
+                        setNotes(data.notes); // Use raw datetime as received from backend
                     }
                 } catch (err) {
                     console.error("Fetch error:", err.message, "Details:", err);
@@ -266,9 +254,7 @@
             };
 
             const updateNote = async (dateTime, newText) => {
-                // Convert display format (dd-mmm-yyyy-hh:mm-AM/PM) to backend format (dd-mmm-yyyy hh:mm AM/PM)
-                const formattedDateTime = dateTime.replace(/-/g, ' ').replace(/([ap]m)$/, m => m.toUpperCase());
-                console.log("Sending updateNote with dateTime:", formattedDateTime, "newText:", newText);
+                console.log("Sending updateNote with dateTime:", dateTime, "newText:", newText);
                 try {
                     const response = await fetch(`${BACKEND_URL}api/update-note`, {
                         method: "POST",
@@ -277,7 +263,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: formattedDateTime,
+                            dateTime: dateTime, // Use raw datetime as received
                             newText
                         })
                     });
@@ -534,8 +520,8 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {note.DateTime.split('-')[0]}</p>
-                                        <p><strong>Time:</strong> {note.DateTime.split('-')[1]}</p>
+                                        <p><strong>Date:</strong> {note.DateTime.split(' ')[0]}</p>
+                                        <p><strong>Time:</strong> {note.DateTime.split(' ')[1]}</p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
