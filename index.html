@@ -21,7 +21,7 @@
     <script type="text/babel">
         console.log("Script loaded at", new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }));
 
-        const BACKEND_URL = "https://transcript-backend-r6l799jry-megamind1212s-projects.vercel.app/";
+        const BACKEND_URL = "https://transcript-backend-2acjuoacq-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
@@ -104,6 +104,15 @@
                     console.error("Fetch error:", err.message, "Details:", err);
                     setError(`Error validating OTP: ${err.message}`);
                 }
+            };
+
+            const skipLogin = () => {
+                if (!orgId || !empId) {
+                    setError("Please enter both orgid and empid.");
+                    return;
+                }
+                setMessage("Skipping OTP validation for now.");
+                showSection("transcription");
             };
 
             const fetchClients = async () => {
@@ -257,6 +266,9 @@
             };
 
             const updateNote = async (dateTime, newText) => {
+                // Convert display format (dd-mmm-yyyy-hh:mm-AM/PM) to backend format (dd-mmm-yyyy hh:mm AM/PM)
+                const formattedDateTime = dateTime.replace(/-/g, ' ').replace(/([ap]m)$/, m => m.toUpperCase());
+                console.log("Sending updateNote with dateTime:", formattedDateTime, "newText:", newText);
                 try {
                     const response = await fetch(`${BACKEND_URL}api/update-note`, {
                         method: "POST",
@@ -265,7 +277,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime,
+                            dateTime: formattedDateTime,
                             newText
                         })
                     });
@@ -386,14 +398,19 @@
                     </div>
 
                     <div id="login" className={`section ${currentSection === "login" ? "active" : ""}`}>
-                        <h2 className="text-xl font-bold mb-4">Login</h2>
-                        <input type="number" placeholder="Org ID" value={orgId} onChange={(e) => setOrgId(e.target.value)} className="border p-2 mb-2 w-full rounded" />
-                        <input type="number" placeholder="Emp ID" value={empId} onChange={(e) => setEmpId(e.target.value)} className="border p-2 mb-2 w-full rounded" />
-                        <button onClick={requestOTP} disabled={isLoading} className={`bg-blue-500 text-white px-4 py-2 rounded flex items-center ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}>
-                            {isLoading ? <span className="loader mr-2"></span> : null}
-                            Request OTP
-                        </button>
-                        <button onClick={() => showSection("welcome")} className="bg-gray-500 text-white px-4 py-2 rounded ml-2">Back</button>
+                        <h2 className="text-xl font-bold mb-6">Login</h2>
+                        <div className="space-y-4">
+                            <input type="number" placeholder="Org ID" value={orgId} onChange={(e) => setOrgId(e.target.value)} className="border p-2 w-full rounded" />
+                            <input type="number" placeholder="Emp ID" value={empId} onChange={(e) => setEmpId(e.target.value)} className="border p-2 w-full rounded" />
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button onClick={requestOTP} disabled={isLoading} className={`bg-blue-500 text-white px-4 py-2 rounded flex items-center ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}>
+                                    {isLoading ? <span className="loader mr-2"></span> : null}
+                                    Request OTP
+                                </button>
+                                <button onClick={skipLogin} className="bg-yellow-500 text-white px-4 py-2 rounded">Skip for Now</button>
+                                <button onClick={() => showSection("welcome")} className="bg-gray-500 text-white px-4 py-2 rounded">Back</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="otp" className={`section ${currentSection === "otp" ? "active" : ""}`}>
@@ -517,8 +534,8 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {note.DateTime.split(' ')[0]}</p>
-                                        <p><strong>Time:</strong> {note.DateTime.split(' ')[1]}</p>
+                                        <p><strong>Date:</strong> {note.DateTime.split('-')[0]}</p>
+                                        <p><strong>Time:</strong> {note.DateTime.split('-')[1]}</p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
