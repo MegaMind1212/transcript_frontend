@@ -21,7 +21,7 @@
     <script type="text/babel">
         console.log("Script loaded at", new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }));
 
-        const BACKEND_URL = "https://transcript-backend-2acjuoacq-megamind1212s-projects.vercel.app/";
+        const BACKEND_URL = "https://transcript-backend-dcszvwfau-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
@@ -245,7 +245,11 @@
                     const data = await response.json();
                     if (data.error) setError(data.error);
                     else {
-                        setNotes(data.notes); // Use raw datetime as received from backend
+                        const formattedNotes = data.notes.map(note => ({
+                            ...note,
+                            DateTime: new Date(note.DateTime).toISOString() // Match backend ISO format
+                        }));
+                        setNotes(formattedNotes);
                     }
                 } catch (err) {
                     console.error("Fetch error:", err.message, "Details:", err);
@@ -254,7 +258,6 @@
             };
 
             const updateNote = async (dateTime, newText) => {
-                console.log("Sending updateNote with dateTime:", dateTime, "newText:", newText);
                 try {
                     const response = await fetch(`${BACKEND_URL}api/update-note`, {
                         method: "POST",
@@ -263,7 +266,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: dateTime, // Use raw datetime as received
+                            dateTime: dateTime, // Use ISO format as received
                             newText
                         })
                     });
@@ -329,20 +332,16 @@
                 const data = {
                     orgId: parseInt(orgId),
                     clientName: formData.get("clientName"),
-                    foreignId: formData.get("foreignId"),
+                    clientShortname: formData.get("clientShortname"),
                     clientPhone: formData.get("clientPhone") || "NA",
                     clientEmail: formData.get("clientEmail")
                 };
-                if (!data.clientName || !data.foreignId || !data.clientEmail) {
-                    setError("Please fill in required fields: client name, foreign ID, and email.");
+                if (!data.clientName || !data.clientShortname || !data.clientEmail) {
+                    setError("Please fill in required fields: client name, shortname, and email.");
                     return;
                 }
                 if (data.clientPhone !== "NA" && !data.clientPhone.match(/\+91[0-9]{10}/)) {
                     setError("If provided, client phone must be in the format +91 followed by 10 digits.");
-                    return;
-                }
-                if (data.foreignId.length < 1 || data.foreignId.length > 16) {
-                    setError("Foreign ID must be between 1 and 16 characters.");
                     return;
                 }
                 try {
@@ -435,7 +434,7 @@
                             <option value="NEW">NEW - Register New Client</option>
                             {clients.map(client => (
                                 <option key={client.ClientID} value={client.ClientID}>
-                                    {client.ClientName} ({client.ForeignID})
+                                    {client.ClientName} ({client.ClientShortname})
                                 </option>
                             ))}
                         </select>
@@ -453,7 +452,7 @@
                         <h2 className="text-xl font-bold mb-4">Register Client</h2>
                         <form onSubmit={registerClient}>
                             <input name="clientName" type="text" placeholder="Client Name" className="border p-2 mb-2 w-full rounded" required />
-                            <input name="foreignId" type="text" placeholder="Foreign ID (1-16 chars)" className="border p-2 mb-2 w-full rounded" required />
+                            <input name="clientShortname" type="text" placeholder="Client Shortname" className="border p-2 mb-2 w-full rounded" required />
                             <input name="clientPhone" type="text" placeholder="Client Phone (+91...) (optional)" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" required />
                             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Register Client</button>
@@ -506,11 +505,11 @@
                             <option value="">Select a client</option>
                             {clients.map(client => (
                                 <option key={client.ClientID} value={client.ClientID}>
-                                    {client.ClientName} ({client.ForeignID})
+                                    {client.ClientName} ({client.ClientShortname})
                                 </option>
                             ))}
                         </select>
-                        <label className="block mb-2">dd-mmm-yyyy (Optional)</label>
+                        <label className="block mb-2">yyyy-mm-dd (Optional)</label>
                         <input id="records-date" type="date" className="border p-2 mb-2 w-full rounded" />
                         <button onClick={fetchNotes} className="bg-blue-500 text-white px-4 py-2 rounded">Fetch Records</button>
                         <button onClick={() => showSection("transcription")} className="bg-gray-500 text-white px-4 py-2 rounded ml-2">Back</button>
@@ -520,8 +519,8 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {note.DateTime.split(' ')[0]}</p>
-                                        <p><strong>Time:</strong> {note.DateTime.split(' ')[1]}</p>
+                                        <p><strong>Date:</strong> {new Date(note.DateTime).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })}</p>
+                                        <p><strong>Time:</strong> {new Date(note.DateTime).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: true })}</p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
