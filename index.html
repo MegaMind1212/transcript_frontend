@@ -26,11 +26,9 @@
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
         function formatForDisplay(dateTime) {
-            if (!dateTime) return "Date: N/A, Time: N/A";
+            // Parse UTC string and convert to IST (UTC+5:30)
             const dt = new Date(dateTime);
-            // Convert UTC to IST (UTC+5:30)
-            dt.setUTCHours(dt.getUTCHours() + 5);
-            dt.setUTCMinutes(dt.getUTCMinutes() + 30);
+            dt.setUTCMinutes(dt.getUTCMinutes() + 330); // Add 5 hours (300 minutes) + 30 minutes
             // Format date as DD-MM-YYYY
             const date = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
             // Format time as HH:MM:SS.microseconds AM/PM IST
@@ -39,8 +37,8 @@
             const seconds = dt.getUTCSeconds();
             const microseconds = dateTime.split('.')[1] || '000000'; // Ensure microseconds
             const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = (hours % 12 || 12).toString().padStart(2, '0'); // 12-hour format
-            return `Date: ${date}, Time: ${displayHours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${microseconds} ${ampm} IST`;
+            const displayHours = hours % 12 || 12; // Convert to 12-hour format
+            return { date: `Date: ${date}`, time: `Time: ${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${microseconds} ${ampm} IST` };
         }
 
         function App() {
@@ -261,13 +259,18 @@
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
+                    console.log("Fetched notes data:", data); // Debug raw DateTime
                     if (data.error) setError(data.error);
                     else {
-                        const formattedNotes = data.notes.map(note => ({
-                            ...note,
-                            displayDateTime: formatForDisplay(note.DateTime), // Formatted for display
-                            DateTime: note.DateTime // Original UTC for transactions
-                        }));
+                        const formattedNotes = data.notes.map(note => {
+                            const { date, time } = formatForDisplay(note.DateTime);
+                            return {
+                                ...note,
+                                displayDate: date,
+                                displayTime: time,
+                                DateTime: note.DateTime // Original UTC for transactions
+                            };
+                        });
                         setNotes(formattedNotes);
                     }
                 } catch (err) {
@@ -349,7 +352,7 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = {
-                    orgId: parseInt(orgId),
+                    orgId: parseInt(orgId), // Foreign key
                     clientName: formData.get("clientName"),
                     clientShortname: formData.get("clientShortname"),
                     clientPhone: formData.get("clientPhone") || "NA",
@@ -474,6 +477,7 @@
                             <input name="clientShortname" type="text" placeholder="Client Shortname" className="border p-2 mb-2 w-full rounded" required />
                             <input name="clientPhone" type="text" placeholder="Client Phone (+91...) (optional)" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" required />
+                            <input type="hidden" name="orgId" value={orgId} />
                             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Register Client</button>
                             <button type="button" onClick={() => showSection("client-selection")} className="bg-gray-500 text-white px-4 py-2 rounded ml-2">Back</button>
                         </form>
@@ -538,7 +542,7 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>{note.displayDateTime}</strong></p>
+                                        <p><strong>{note.displayDate}</strong><br /><strong>{note.displayTime}</strong></p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
