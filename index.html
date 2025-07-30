@@ -356,7 +356,7 @@
                 const data = {
                     orgId: parseInt(orgId), // Foreign key
                     clientName: formData.get("clientName"),
-                    foreignid: formData.get("foreignKey") || "", // Map to foreignid, default empty if not provided
+                    foreignid: formData.get("foreignKey") || "", // Default to empty string if not provided
                     clientPhone: formData.get("clientPhone") || "NA", // Default to "NA" if empty
                     clientEmail: formData.get("clientEmail"),
                     clientShortname: null // Explicitly set to null
