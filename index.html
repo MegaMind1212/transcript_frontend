@@ -26,11 +26,13 @@
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
         function formatForDisplay(dateTime) {
-            // Parse UTC string and convert to IST (UTC+5:30)
-            const dt = new Date(dateTime);
-            dt.setUTCMinutes(dt.getUTCMinutes() + 330); // Add 5 hours (300 minutes) + 30 minutes
-            // Format date as DD-MM-YYYY
-            const date = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
+            // Parse UTC string explicitly as UTC
+            const dt = new Date(dateTime + 'Z'); // Ensure UTC interpretation
+            // Add 5 hours and 30 minutes to convert to IST
+            dt.setUTCMinutes(dt.getUTCMinutes() + 330); // 5h 30m = 330 minutes
+            // Format date as DD-MM-YYYY using original UTC date to avoid day shift
+            const utcDate = new Date(dateTime + 'Z');
+            const date = utcDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
             // Format time as HH:MM:SS.microseconds AM/PM IST
             const hours = dt.getUTCHours();
             const minutes = dt.getUTCMinutes();
@@ -354,12 +356,12 @@
                 const data = {
                     orgId: parseInt(orgId), // Foreign key
                     clientName: formData.get("clientName"),
-                    clientShortname: formData.get("clientShortname"),
+                    foreignKey: formData.get("foreignKey"),
                     clientPhone: formData.get("clientPhone") || "NA",
                     clientEmail: formData.get("clientEmail")
                 };
-                if (!data.clientName || !data.clientShortname || !data.clientEmail) {
-                    setError("Please fill in required fields: client name, shortname, and email.");
+                if (!data.clientName || !data.clientEmail) {
+                    setError("Please fill in required fields: client name and email.");
                     return;
                 }
                 if (data.clientPhone !== "NA" && !data.clientPhone.match(/\+91[0-9]{10}/)) {
@@ -474,7 +476,7 @@
                         <h2 className="text-xl font-bold mb-4">Register Client</h2>
                         <form onSubmit={registerClient}>
                             <input name="clientName" type="text" placeholder="Client Name" className="border p-2 mb-2 w-full rounded" required />
-                            <input name="clientShortname" type="text" placeholder="Client Shortname" className="border p-2 mb-2 w-full rounded" required />
+                            <input name="foreignKey" type="text" placeholder="Foreign Key" maxLength="16" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientPhone" type="text" placeholder="Client Phone (+91...) (optional)" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" required />
                             <input type="hidden" name="orgId" value={orgId} />
