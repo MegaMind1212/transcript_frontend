@@ -26,15 +26,21 @@
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
         function formatForDisplay(dateTime) {
+            if (!dateTime) return "Date: N/A, Time: N/A";
             const dt = new Date(dateTime);
-            const hours = dt.getUTCHours() + 5 + (dt.getUTCMinutes() >= 30 ? 1 : 0); // Convert UTC to IST (UTC+5:30)
-            const adjustedMinutes = dt.getUTCMinutes() + (hours === dt.getUTCHours() + 6 ? 30 : 0); // Handle hour roll-over
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12; // Convert to 12-hour format
-            const minutes = adjustedMinutes % 60;
+            // Convert UTC to IST (UTC+5:30)
+            dt.setUTCHours(dt.getUTCHours() + 5);
+            dt.setUTCMinutes(dt.getUTCMinutes() + 30);
+            // Format date as DD-MM-YYYY
+            const date = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
+            // Format time as HH:MM:SS.microseconds AM/PM IST
+            const hours = dt.getUTCHours();
+            const minutes = dt.getUTCMinutes();
             const seconds = dt.getUTCSeconds();
             const microseconds = dateTime.split('.')[1] || '000000'; // Ensure microseconds
-            return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${microseconds} ${ampm} IST`;
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = (hours % 12 || 12).toString().padStart(2, '0'); // 12-hour format
+            return `Date: ${date}, Time: ${displayHours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${microseconds} ${ampm} IST`;
         }
 
         function App() {
@@ -259,7 +265,7 @@
                     else {
                         const formattedNotes = data.notes.map(note => ({
                             ...note,
-                            displayDateTime: formatForDisplay(note.DateTime), // IST display
+                            displayDateTime: formatForDisplay(note.DateTime), // Formatted for display
                             DateTime: note.DateTime // Original UTC for transactions
                         }));
                         setNotes(formattedNotes);
@@ -532,7 +538,7 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {note.displayDateTime}</p>
+                                        <p><strong>{note.displayDateTime}</strong></p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
