@@ -25,6 +25,18 @@
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
+        function formatForDisplay(dateTime) {
+            const dt = new Date(dateTime);
+            const hours = dt.getUTCHours() + 5 + (dt.getUTCMinutes() >= 30 ? 1 : 0); // Convert UTC to IST (UTC+5:30)
+            const adjustedMinutes = dt.getUTCMinutes() + (hours === dt.getUTCHours() + 6 ? 30 : 0); // Handle hour roll-over
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12; // Convert to 12-hour format
+            const minutes = adjustedMinutes % 60;
+            const seconds = dt.getUTCSeconds();
+            const microseconds = dateTime.split('.')[1] || '000000'; // Ensure microseconds
+            return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${microseconds} ${ampm} IST`;
+        }
+
         function App() {
             const [currentSection, setCurrentSection] = React.useState("welcome");
             const [orgId, setOrgId] = React.useState("");
@@ -247,7 +259,8 @@
                     else {
                         const formattedNotes = data.notes.map(note => ({
                             ...note,
-                            DateTime: note.DateTime  // Use raw string from backend
+                            displayDateTime: formatForDisplay(note.DateTime), // IST display
+                            DateTime: note.DateTime // Original UTC for transactions
                         }));
                         setNotes(formattedNotes);
                     }
@@ -266,7 +279,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: dateTime,  // Use raw string as received
+                            dateTime: dateTime, // Original UTC format
                             newText
                         })
                     });
@@ -519,7 +532,7 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {note.DateTime}</p>
+                                        <p><strong>Date:</strong> {note.displayDateTime}</p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
