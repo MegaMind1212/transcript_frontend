@@ -21,7 +21,7 @@
     <script type="text/babel">
         console.log("Script loaded at", new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }));
 
-        const BACKEND_URL = "https://transcript-backend-dcszvwfau-megamind1212s-projects.vercel.app/";
+        const BACKEND_URL = "https://transcript-backend-mw4kneim4-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
@@ -247,7 +247,7 @@
                     else {
                         const formattedNotes = data.notes.map(note => ({
                             ...note,
-                            DateTime: new Date(note.DateTime).toISOString() // Match backend ISO format
+                            DateTime: new Date(note.DateTime).toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) // IST format
                         }));
                         setNotes(formattedNotes);
                     }
@@ -266,7 +266,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: dateTime, // Use ISO format as received
+                            dateTime: dateTime, // IST format as displayed
                             newText
                         })
                     });
@@ -519,8 +519,7 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {new Date(note.DateTime).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })}</p>
-                                        <p><strong>Time:</strong> {new Date(note.DateTime).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: true })}</p>
+                                        <p><strong>Date:</strong> {note.DateTime}</p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
