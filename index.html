@@ -25,6 +25,15 @@
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
+        function formatForDisplay(dateTime) {
+            const dt = new Date(dateTime);
+            const date = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join(' - ');
+            const time = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const seconds = dt.getSeconds();
+            const microseconds = dateTime.split('.')[1] || '000000'; // Ensure microseconds are included
+            return `${date}, ${time} ${seconds}.${microseconds} seconds`;
+        }
+
         function App() {
             const [currentSection, setCurrentSection] = React.useState("welcome");
             const [orgId, setOrgId] = React.useState("");
@@ -247,7 +256,8 @@
                     else {
                         const formattedNotes = data.notes.map(note => ({
                             ...note,
-                            DateTime: note.DateTime  // Use raw string from backend
+                            displayDateTime: formatForDisplay(note.DateTime), // Human-readable for display
+                            DateTime: note.DateTime // Original format for transactions
                         }));
                         setNotes(formattedNotes);
                     }
@@ -266,7 +276,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: dateTime,  // Use raw string as received
+                            dateTime: dateTime, // Original format as received
                             newText
                         })
                     });
@@ -519,7 +529,7 @@
                             ) : (
                                 notes.map((note, index) => (
                                     <div key={index} className="border p-4 mb-2 rounded">
-                                        <p><strong>Date:</strong> {note.DateTime}</p>
+                                        <p><strong>Date:</strong> {note.displayDateTime}</p>
                                         <p
                                             contentEditable={false}
                                             onBlur={(e) => {
