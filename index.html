@@ -19,7 +19,7 @@
 <body class="bg-gray-100 font-sans">
     <div id="root" class="container mx-auto p-4 max-w-2xl"></div>
     <script type="text/babel">
-        console.log("Script loaded at", new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }));
+        console.log("Script loaded at", new Date().toISOString());
 
         const BACKEND_URL = "https://transcript-backend-gv0knd8kg-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
@@ -247,7 +247,7 @@
                     else {
                         const formattedNotes = data.notes.map(note => ({
                             ...note,
-                            DateTime: new Date(note.DateTime).toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) // IST format
+                            DateTime: note.DateTime  // Use raw string from backend
                         }));
                         setNotes(formattedNotes);
                     }
@@ -266,7 +266,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: dateTime, // IST format as displayed
+                            dateTime: dateTime,  // Use raw string as received
                             newText
                         })
                     });
