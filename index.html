@@ -26,20 +26,16 @@
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
         function formatForDisplay(dateTime) {
-            // Parse UTC string explicitly as UTC
-            const dt = new Date(dateTime + 'Z'); // Ensure UTC interpretation
-            // Add 5 hours and 30 minutes to convert to IST
-            dt.setUTCMinutes(dt.getUTCMinutes() + 330); // 5h 30m = 330 minutes
-            // Format date as DD-MM-YYYY using original UTC date to avoid day shift
+            const dt = new Date(dateTime + 'Z');
+            dt.setUTCMinutes(dt.getUTCMinutes() + 330);
             const utcDate = new Date(dateTime + 'Z');
             const date = utcDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
-            // Format time as HH:MM:SS.microseconds AM/PM IST
             const hours = dt.getUTCHours();
             const minutes = dt.getUTCMinutes();
             const seconds = dt.getUTCSeconds();
-            const microseconds = dateTime.split('.')[1] || '000000'; // Ensure microseconds
+            const microseconds = dateTime.split('.')[1] || '000000';
             const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12; // Convert to 12-hour format
+            const displayHours = hours % 12 || 12;
             return { date: `Date: ${date}`, time: `Time: ${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${microseconds} ${ampm} IST` };
         }
 
@@ -153,6 +149,10 @@
             const startRecording = async () => {
                 audioChunks.current = [];
                 setTranscription("");
+                if (!clientId || clientId === "NEW") {
+                    setError("Please select a valid client or register a new one before recording.");
+                    return;
+                }
                 try {
                     stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder.current = new MediaRecorder(stream.current, { mimeType: "audio/webm" });
@@ -261,7 +261,7 @@
                     });
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
-                    console.log("Fetched notes data:", data); // Debug raw DateTime
+                    console.log("Fetched notes data:", data);
                     if (data.error) setError(data.error);
                     else {
                         const formattedNotes = data.notes.map(note => {
@@ -270,7 +270,7 @@
                                 ...note,
                                 displayDate: date,
                                 displayTime: time,
-                                DateTime: note.DateTime // Original UTC for transactions
+                                DateTime: note.DateTime
                             };
                         });
                         setNotes(formattedNotes);
@@ -290,7 +290,7 @@
                             orgId: parseInt(orgId),
                             empId: parseInt(empId),
                             clientId: parseInt(clientId),
-                            dateTime: dateTime, // Original UTC format
+                            dateTime: dateTime,
                             newText
                         })
                     });
@@ -299,7 +299,7 @@
                     if (data.error) setError(data.error);
                     else {
                         setMessage(data.message);
-                        fetchNotes(); // Refresh notes after update
+                        fetchNotes();
                     }
                 } catch (err) {
                     console.error("Fetch error:", err.message, "Details:", err);
@@ -354,13 +354,14 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = {
-                    orgId: parseInt(orgId), // From login
+                    orgId: parseInt(orgId),
                     clientName: formData.get("clientName"),
-                    clientShortname: null, // Optional, set to null
-                    clientPhone: formData.get("clientPhone") || "NA", // Optional, default to "NA"
-                    clientEmail: formData.get("clientEmail")
+                    clientShortname: null,
+                    clientPhone: formData.get("clientPhone") || "NA",
+                    clientEmail: formData.get("clientEmail"),
+                    foreignKey: formData.get("foreignKey") || "X"
                 };
-                console.log("Register Client Request Body:", data); // Debug the sent data
+                console.log("Register Client Request Body:", data);
                 if (!data.clientName || !data.clientEmail) {
                     setError("Please fill in required fields: client name and email.");
                     return;
@@ -464,7 +465,7 @@
                             ))}
                         </select>
                         <button onClick={() => {
-                            if (!clientId) setError("Select a client.");
+                            if (!clientId || clientId === "NEW") setError("Please select a valid client or register a new one.");
                             else {
                                 showSection("transcription");
                                 startRecording();
@@ -477,6 +478,7 @@
                         <h2 className="text-xl font-bold mb-4">Register Client</h2>
                         <form onSubmit={registerClient}>
                             <input name="clientName" type="text" placeholder="Client Name" className="border p-2 mb-2 w-full rounded" required />
+                            <input name="foreignKey" type="text" placeholder="Foreign Key" maxLength="16" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientPhone" type="text" placeholder="Client Phone (+91...) (optional)" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" required />
                             <input type="hidden" name="orgId" value={orgId} />
@@ -488,7 +490,7 @@
                     <div id="transcription" className={`section ${currentSection === "transcription" ? "active" : ""}`}>
                         <h2 className="text-xl font-bold mb-4">Consultation Transcription</h2>
                         <button
-                            onClick={() => isRecording ? stopRecording() : showSection("client-selection")}
+                            onClick={() => isRecording ? stopRecording() : startRecording()}
                             className={`px-4 py-2 rounded ${isRecording ? "bg-red-500 text-white" : "bg-blue-500 text-white"}`}
                             title={isRecording ? "Stop recording" : "Start recording"}
                         >
