@@ -21,7 +21,7 @@
     <script type="text/babel">
         console.log("Script loaded at", new Date().toISOString());
 
-        const BACKEND_URL = "https://transcript-backend-knp00w7yd-megamind1212s-projects.vercel.app/";
+        const BACKEND_URL = "https://transcript-backend-j66i04p3j-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
@@ -465,8 +465,10 @@
                             ))}
                         </select>
                         <button onClick={() => {
-                            if (!clientId || clientId === "NEW") setError("Please select a valid client or register a new one.");
-                            else {
+                            if (!clientId || clientId === "NEW") {
+                                setError("Please select a valid client or register a new one.");
+                                showSection("client-register");
+                            } else {
                                 showSection("transcription");
                                 startRecording();
                             }
