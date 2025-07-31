@@ -354,13 +354,14 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = {
-                    orgId: parseInt(orgId), // Foreign key
+                    orgId: parseInt(orgId), // From login
                     clientName: formData.get("clientName"),
-                    foreignid: formData.get("foreignKey") || "", // Default to empty string if not provided
+                    foreignid: formData.get("foreignKey") || "X", // Default to "X" if empty, 1-16 chars
                     clientPhone: formData.get("clientPhone") || "NA", // Default to "NA" if empty
                     clientEmail: formData.get("clientEmail"),
                     clientShortname: null // Explicitly set to null
                 };
+                console.log("Register Client Request Body:", data); // Debug the sent data
                 if (!data.clientName || !data.clientEmail) {
                     setError("Please fill in required fields: client name and email.");
                     return;
