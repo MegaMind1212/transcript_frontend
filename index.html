@@ -150,7 +150,8 @@
                 audioChunks.current = [];
                 setTranscription("");
                 if (!clientId || clientId === "NEW") {
-                    setError("Please select a valid client or register a new one before recording.");
+                    setError("Please select a client or register a new one.");
+                    showSection("client-selection");
                     return;
                 }
                 try {
@@ -470,7 +471,6 @@
                                 showSection("client-register");
                             } else {
                                 showSection("transcription");
-                                startRecording();
                             }
                         }} className="bg-blue-500 text-white px-4 py-2 rounded">Proceed to Record</button>
                         <button onClick={() => showSection("transcription")} className="bg-gray-500 text-white px-4 py-2 rounded ml-2">Back</button>
@@ -492,7 +492,13 @@
                     <div id="transcription" className={`section ${currentSection === "transcription" ? "active" : ""}`}>
                         <h2 className="text-xl font-bold mb-4">Consultation Transcription</h2>
                         <button
-                            onClick={() => isRecording ? stopRecording() : startRecording()}
+                            onClick={() => {
+                                if (!isRecording) {
+                                    startRecording();
+                                } else {
+                                    stopRecording();
+                                }
+                            }}
                             className={`px-4 py-2 rounded ${isRecording ? "bg-red-500 text-white" : "bg-blue-500 text-white"}`}
                             title={isRecording ? "Stop recording" : "Start recording"}
                         >
