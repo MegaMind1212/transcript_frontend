@@ -21,7 +21,7 @@
     <script type="text/babel">
         console.log("Script loaded at", new Date().toISOString());
 
-        const BACKEND_URL = "https://transcript-backend-gv0knd8kg-megamind1212s-projects.vercel.app/";
+        const BACKEND_URL = "https://transcript-backend-knp00w7yd-megamind1212s-projects.vercel.app/";
         const DEEPGRAM_API_KEY = "32683910a62128aacbef2a8e7710d94c77a46101";
         const DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen?model=nova-3-medical&diarize=true&smart_format=true&punctuate=true";
 
@@ -356,10 +356,9 @@
                 const data = {
                     orgId: parseInt(orgId), // From login
                     clientName: formData.get("clientName"),
-                    foreignid: formData.get("foreignKey") || "X", // Default to "X" if empty, 1-16 chars
-                    clientPhone: formData.get("clientPhone") || "NA", // Default to "NA" if empty
-                    clientEmail: formData.get("clientEmail"),
-                    clientShortname: null // Explicitly set to null
+                    clientShortname: null, // Optional, set to null
+                    clientPhone: formData.get("clientPhone") || "NA", // Optional, default to "NA"
+                    clientEmail: formData.get("clientEmail")
                 };
                 console.log("Register Client Request Body:", data); // Debug the sent data
                 if (!data.clientName || !data.clientEmail) {
@@ -478,7 +477,6 @@
                         <h2 className="text-xl font-bold mb-4">Register Client</h2>
                         <form onSubmit={registerClient}>
                             <input name="clientName" type="text" placeholder="Client Name" className="border p-2 mb-2 w-full rounded" required />
-                            <input name="foreignKey" type="text" placeholder="Foreign Key" maxLength="16" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientPhone" type="text" placeholder="Client Phone (+91...) (optional)" className="border p-2 mb-2 w-full rounded" />
                             <input name="clientEmail" type="email" placeholder="Client Email" className="border p-2 mb-2 w-full rounded" required />
                             <input type="hidden" name="orgId" value={orgId} />
