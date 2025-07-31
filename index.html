@@ -149,58 +149,8 @@
             const startRecording = async () => {
                 audioChunks.current = [];
                 setTranscription("");
-                if (!clientId || clientId === "NEW") {
-                    setError("Please select a client or register a new one.");
-                    showSection("client-selection");
-                    return;
-                }
-                try {
-                    stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder.current = new MediaRecorder(stream.current, { mimeType: "audio/webm" });
-                    socket.current = new WebSocket(DEEPGRAM_WS_URL, ["token", DEEPGRAM_API_KEY]);
-
-                    socket.current.onopen = () => {
-                        mediaRecorder.current.start(250);
-                        setIsRecording(true);
-                    };
-
-                    socket.current.onmessage = (event) => {
-                        const data = JSON.parse(event.data);
-                        const transcript = data.channel?.alternatives?.[0]?.transcript;
-                        const words = data.channel?.alternatives?.[0]?.words || [];
-                        if (transcript && words.length > 0) {
-                            let newText = "";
-                            words.forEach(wordInfo => {
-                                const word = wordInfo.punctuated_word || wordInfo.word;
-                                newText += (newText ? " " : "") + word;
-                            });
-                            setTranscription(prev => prev + (prev ? " " : "") + newText.trim());
-                        }
-                    };
-
-                    socket.current.onerror = () => {
-                        stopRecording();
-                        setError("Error connecting to Deepgram. Check API key.");
-                    };
-
-                    mediaRecorder.current.ondataavailable = (event) => {
-                        if (event.data.size > 0) {
-                            audioChunks.current.push(event.data);
-                            if (socket.current.readyState === WebSocket.OPEN) socket.current.send(event.data);
-                        }
-                    };
-
-                    mediaRecorder.current.onstop = () => {
-                        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
-                        const reader = new FileReader();
-                        reader.readAsDataURL(audioBlob);
-                        reader.onloadend = () => {
-                            setAudioData(reader.result.split(",")[1]);
-                        };
-                    };
-                } catch (err) {
-                    setError(`Microphone error: ${err.message}`);
-                }
+                showSection("client-selection");
+                return; // Redirect to client selection on each start click
             };
 
             const stopRecording = () => {
@@ -530,6 +480,7 @@
                             setNotes([]);
                             showSection("records");
                         }} className="bg-blue-500 text-white px-4 py-2 rounded mt-2 ml-2">See Records</button>
+                        <button onClick={() => showSection("client-selection")} className="bg-blue-500 text-white px-4 py-2 rounded mt-2 ml-2">Select Client</button>
                     </div>
 
                     <div id="records" className={`section ${currentSection === "records" ? "active" : ""}`}>
